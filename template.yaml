@@ -1,0 +1,56 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: sam-app practice2
+
+Globals:
+  Function:
+    Timeout: 10
+    MemorySize: 128
+
+Resources:
+  HelloWorldFunction:
+    Type: AWS::Serverless::Function 
+    Properties:
+      CodeUri: s3/
+      Handler: app.lambda_handler
+      Runtime: python3.9
+      Policies: 
+        - AWSLambdaExecute
+        - DynamoDBCrudPolicy:
+            TableName: !Ref DynamoDBTable
+      Events:
+        S3Event:
+          Type: S3
+          Properties:
+            Bucket: !Ref ImagesBucket 
+            Events: s3:ObjectCreated:*
+  
+  ImagesBucket:
+    Type: AWS::S3::Bucket
+  
+  DynamoDBTable:
+    Type: 'AWS::DynamoDB::Table'
+    Properties:
+      TableName: MyDynamoDBTable
+      AttributeDefinitions:
+        - AttributeName: filename
+          AttributeType: S
+      KeySchema:
+        - AttributeName: filename
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+ 
+Outputs:
+  HelloWorldFunctionArn:
+    Description: "ARN of the HelloWorldFunction"
+    Value:
+      Fn::GetAtt:
+        - HelloWorldFunction
+        - Arn
+
+  ImagesBucketName:
+    Description: "Name of the ImagesBucket"
+    Value:
+      Ref: ImagesBucket
